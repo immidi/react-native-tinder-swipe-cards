@@ -1,17 +1,8 @@
 /* Gratefully copied from https://github.com/brentvatne/react-native-animated-demo-tinder */
 'use strict';
 
-import React, {Component} from 'react';
-
-import {
-    StyleSheet,
-    Text,
-    View,
-    Animated,
-    PanResponder,
-    Image
-} from 'react-native';
-
+import React, { Component } from 'react';
+import { StyleSheet, Text, View, Animated, PanResponder, Image} from 'react-native';
 import clamp from 'clamp';
 
 import Defaults from './Defaults.js';
@@ -53,14 +44,6 @@ class SwipeCards extends Component {
       this.state.enter,
       { toValue: 1, friction: 8 }
     ).start();
-  }
-
-  componentWillReceiveProps(nextProps){
-    if(nextProps.cards && nextProps.cards.length > 0){
-      this.setState({
-        card: nextProps.cards[0]
-      })
-    }
   }
 
   componentWillMount() {
@@ -153,39 +136,30 @@ class SwipeCards extends Component {
     return (
       <View style={styles.container}>
         { this.state.card
-            ? (
-            <Animated.View style={[styles.card, animatedCardstyles]} {...this._panResponder.panHandlers}>
-              {this.renderCard(this.state.card)}
-            </Animated.View>
-            )
-            : this.renderNoMoreCards() }
+          ? (
+          <Animated.View style={[styles.card, animatedCardstyles]} {...this._panResponder.panHandlers}>
+            {this.renderCard(this.state.card)}
+          </Animated.View>
+        )
+          : this.renderNoMoreCards() }
 
 
-        { this.props.renderNope
-          ? this.props.renderNope(pan)
-          : (
-              this.props.showNope
-              ? (
-                <Animated.View style={[styles.nope, animatedNopeStyles]}>
-                  <Text style={styles.nopeText}>{this.props.noText ? this.props.noText : "Nope!"}</Text>
-                </Animated.View>
-                )
-              : null
-            )
+        { this.props.showNope
+          ? (
+          <Animated.View style={[styles.nope, animatedNopeStyles]}>
+            <Text style={styles.nopeText}>Nope!</Text>
+          </Animated.View>
+        )
+          : null
         }
 
-        { this.props.renderYup
-          ? this.props.renderYup(pan)
-          : (
-              this.props.showYup
-              ? (
-                <Animated.View style={[styles.yup, animatedYupStyles]}>
-                  <Text style={styles.yupText}>{this.props.yupText? this.props.yupText : "Yup!"}</Text>
-                </Animated.View>
-              )
-              : null
-            )
-        }
+        { this.props.showYup
+          ? (
+          <Animated.View style={[styles.yup, animatedYupStyles]}>
+            <Text style={styles.yupText}>Yup!</Text>
+          </Animated.View>
+        )
+          : null }
 
       </View>
     );
@@ -200,9 +174,7 @@ SwipeCards.propTypes = {
   showYup: React.PropTypes.bool,
   showNope: React.PropTypes.bool,
   handleYup: React.PropTypes.func,
-  handleNope: React.PropTypes.func,
-  yupText: React.PropTypes.string,
-  noText: React.PropTypes.string,
+  handleNope: React.PropTypes.func
 };
 
 SwipeCards.defaultProps = {
