@@ -2,11 +2,13 @@
 'use strict';
 
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, Animated, PanResponder, Image} from 'react-native';
+import { StyleSheet, Text, View, Animated, PanResponder, Image, Dimensions} from 'react-native';
 import clamp from 'clamp';
 
 import Defaults from './Defaults.js';
 
+
+const screenHeight = Dimensions.get('window').height;
 var SWIPE_THRESHOLD = 120;
 
 class SwipeCards extends Component {
@@ -15,23 +17,32 @@ class SwipeCards extends Component {
 
     this.state = {
       pan: new Animated.ValueXY(),
-      enter: new Animated.Value(0.5),
+      enter: new Animated.Value(0.8),
       card: this.props.cards[0],
+      nextCard: this.props.cards[1]
     }
   }
 
   _goToNextCard() {
     let currentCardIdx = this.props.cards.indexOf(this.state.card);
-    let newIdx = currentCardIdx + 1;
+    let newIdx = (currentCardIdx + 1);
 
     // Checks to see if last card.
     // If props.loop=true, will start again from the first card.
+
+
     let card = newIdx > this.props.cards.length - 1
       ? this.props.loop ? this.props.cards[0] : null
       : this.props.cards[newIdx];
 
+    let nextCard =  newIdx > this.props.cards.length - 1
+      ? this.props.loop ? this.props.cards[1] : null
+      : newIdx+1 > this.props.cards.length - 1? this.props.cards[0] : this.props.cards[newIdx+1];
+
+
     this.setState({
-      card: card
+      card: card,
+      nextCard: nextCard
     });
   }
 
@@ -64,15 +75,15 @@ class SwipeCards extends Component {
         this.state.pan.flattenOffset();
         var velocity;
 
-        if (vx >= 0) {
-          velocity = clamp(vx, 3, 5);
-        } else if (vx < 0) {
-          velocity = clamp(vx * -1, 3, 5) * -1;
+        if (vy >= 0) {
+          velocity = clamp(vy, 3, 5);
+        } else if (vy < 0) {
+          velocity = clamp(vy * -1, 3, 5) * -1;
         }
 
-        if (Math.abs(this.state.pan.x._value) > SWIPE_THRESHOLD) {
+        if (Math.abs(this.state.pan.y._value) > SWIPE_THRESHOLD) {
 
-          this.state.pan.x._value > 0
+          this.state.pan.y._value > 0
             ? this.props.handleYup(this.state.card)
             : this.props.handleNope(this.state.card)
 
@@ -81,7 +92,7 @@ class SwipeCards extends Component {
             : null
 
           Animated.decay(this.state.pan, {
-            velocity: {x: velocity, y: vy},
+            velocity: {x: vx, y: velocity},
             deceleration: 0.98
           }).start(this._resetState.bind(this))
         } else {
@@ -114,53 +125,44 @@ class SwipeCards extends Component {
     return this.props.renderCard(cardData)
   }
 
+  renderNextCard(cardData) {
+    return this.props.renderNextCard(cardData)
+  }
+
   render() {
     let { pan, enter, } = this.state;
 
-    let [translateX, translateY] = [pan.x, pan.y];
+    let [translateX, translateY] = [0, pan.y];
 
-    let rotate = pan.x.interpolate({inputRange: [-200, 0, 200], outputRange: ["-30deg", "0deg", "30deg"]});
-    let opacity = pan.x.interpolate({inputRange: [-200, 0, 200], outputRange: [0.5, 1, 0.5]});
-    let scale = enter;
-
+    let rotate = pan.y.interpolate({inputRange: [-20, 0, 20], outputRange: ["0deg", "0deg", "0deg"]});
+    let opacity = pan.y.interpolate({inputRange: [-200, 0, 200], outputRange: [0.5, 1, 0.5]});
+    let scale = pan.y.interpolate({inputRange: [1, 1], outputRange: [1, 1], extrapolate: 'clamp'});
     let animatedCardstyles = {transform: [{translateX}, {translateY}, {rotate}, {scale}], opacity};
 
-    let yupOpacity = pan.x.interpolate({inputRange: [0, 150], outputRange: [0, 1]});
-    let yupScale = pan.x.interpolate({inputRange: [0, 150], outputRange: [0.5, 1], extrapolate: 'clamp'});
+    // Swipe down
+    let yupOpacity = pan.y.interpolate({inputRange: [1, screenHeight], outputRange: [0.5, 1]});
+    let yupScale = pan.y.interpolate({inputRange: [1, 150], outputRange: [1, 1], extrapolate: 'clamp'});
     let animatedYupStyles = {transform: [{scale: yupScale}], opacity: yupOpacity}
 
-    let nopeOpacity = pan.x.interpolate({inputRange: [-150, 0], outputRange: [1, 0]});
-    let nopeScale = pan.x.interpolate({inputRange: [-150, 0], outputRange: [1, 0.5], extrapolate: 'clamp'});
+    // Swipe up
+    let nopeOpacity = pan.y.interpolate({inputRange: [-screenHeight, 1], outputRange: [0.5, 1]});
+    let nopeScale = pan.y.interpolate({inputRange: [-150, 1], outputRange: [1, 1], extrapolate: 'clamp'});
     let animatedNopeStyles = {transform: [{scale: nopeScale}], opacity: nopeOpacity}
 
     return (
       <View style={styles.container}>
         { this.state.card
           ? (
-          <Animated.View style={[styles.card, animatedCardstyles]} {...this._panResponder.panHandlers}>
-            {this.renderCard(this.state.card)}
-          </Animated.View>
+          <View>
+            <View>
+              {this.renderNextCard(this.state.nextCard)}
+            </View>
+            <Animated.View style={[styles.card, animatedCardstyles]} {...this._panResponder.panHandlers}>
+              {this.renderCard(this.state.card)}
+            </Animated.View>
+          </View>
         )
           : this.renderNoMoreCards() }
-
-
-        { this.props.showNope
-          ? (
-          <Animated.View style={[styles.nope, animatedNopeStyles]}>
-            <Text style={styles.nopeText}>Nope!</Text>
-          </Animated.View>
-        )
-          : null
-        }
-
-        { this.props.showYup
-          ? (
-          <Animated.View style={[styles.yup, animatedYupStyles]}>
-            <Text style={styles.yupText}>Yup!</Text>
-          </Animated.View>
-        )
-          : null }
-
       </View>
     );
   }
